@@ -1,0 +1,80 @@
+/* ── Root ─────────────────────────── */
+.auth-root{display:flex;min-height:100vh;background:var(--bg)}
+
+/* ── Left panel ──────────────────── */
+.auth-left{display:none;flex:1;position:relative;background:linear-gradient(135deg,#080c14,#0d1825 50%,#080c14);border-right:1px solid var(--border);overflow:hidden}
+@media(min-width:1024px){.auth-left{display:flex}}
+.auth-left::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 30% 60%,rgba(126,232,162,.06),transparent 70%);pointer-events:none}
+.auth-left-inner{position:relative;z-index:2;display:flex;flex-direction:column;padding:48px 56px;width:100%;animation:fadeIn .6s ease}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:80px}
+.brand-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.left-content{margin-bottom:48px}
+.left-heading{font-family:'Syne',sans-serif;font-size:clamp(32px,3.5vw,48px);font-weight:800;color:#fff;line-height:1.1;letter-spacing:-1px;margin:0 0 18px}
+.accent{color:var(--accent)}
+.left-sub{font-family:'Inter',sans-serif;font-size:15px;color:var(--dim);line-height:1.7;margin:0;max-width:380px}
+.feature-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.feature-item{display:flex;align-items:center;gap:12px;font-family:'Inter',sans-serif;font-size:14px;color:var(--dim)}
+.feature-icon{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(126,232,162,.08);border:1px solid rgba(126,232,162,.15);border-radius:7px;color:var(--accent)}
+.grid-deco{position:absolute;bottom:0;left:0;right:0;height:200px;display:flex;flex-direction:column;justify-content:flex-end;opacity:.07;pointer-events:none}
+.grid-line{width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);margin-bottom:28px}
+
+/* ── Right panel ─────────────────── */
+.auth-right{display:flex;align-items:center;justify-content:center;flex:0 0 100%;padding:32px 24px;min-height:100vh}
+@media(min-width:1024px){.auth-right{flex:0 0 480px;padding:48px 56px}}
+.form-wrap{width:100%;max-width:380px;animation:fadeUp .4s ease}
+
+/* Status banner */
+.status-msg{display:flex;align-items:center;gap:8px;background:rgba(126,232,162,.08);border:1px solid rgba(126,232,162,.2);border-radius:10px;padding:10px 14px;font-family:'Inter',sans-serif;font-size:13px;color:var(--accent);margin-bottom:22px}
+
+/* Header */
+.form-header{margin-bottom:28px}
+.eyebrow{display:flex;align-items:center;gap:7px;font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:10px}
+.eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s ease-in-out infinite}
+.form-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:#fff;margin:0 0 6px;letter-spacing:-.4px}
+.form-sub{font-family:'Inter',sans-serif;font-size:14px;color:var(--dim);margin:0}
+
+/* Form */
+.form{display:flex;flex-direction:column;gap:18px}
+.field{display:flex;flex-direction:column;gap:5px}
+.label{font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;color:var(--dim)}
+.label-row{display:flex;align-items:center;justify-content:space-between}
+.forgot{font-family:'Inter',sans-serif;font-size:12px;color:var(--accent);text-decoration:none;transition:opacity .15s}
+.forgot:hover{opacity:.75}
+.input-wrap{position:relative;display:flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;transition:border-color .2s,box-shadow .2s}
+.input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(126,232,162,.1)}
+.input-wrap.err{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.08)}
+.ico{position:absolute;left:14px;color:var(--muted);display:flex;align-items:center;pointer-events:none;transition:color .2s}
+.input-wrap:focus-within .ico{color:var(--accent)}
+.inp{width:100%;background:transparent;border:none;outline:none;padding:12px 14px 12px 42px;font-family:'Inter',sans-serif;font-size:14px;color:var(--text);caret-color:var(--accent)}
+.inp::placeholder{color:var(--muted)}
+.inp:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--surface) inset;-webkit-text-fill-color:var(--text)}
+.toggle{position:absolute;right:12px;background:none;border:none;padding:4px;cursor:pointer;color:var(--muted);display:flex;align-items:center;transition:color .15s}
+.toggle:hover{color:var(--dim)}
+.err-msg{display:flex;align-items:center;gap:5px;font-family:'Inter',sans-serif;font-size:12px;color:#f87171;margin:0}
+
+/* Checkbox */
+.check-label{display:flex;align-items:center;gap:9px;cursor:pointer;margin-top:-4px}
+.check-input{display:none}
+.check-box{width:18px;height:18px;flex-shrink:0;border:1px solid var(--border2);border-radius:5px;background:var(--surface);transition:all .15s;position:relative}
+.check-input:checked~.check-box{background:var(--accent);border-color:var(--accent)}
+.check-input:checked~.check-box::after{content:'';position:absolute;top:2px;left:5px;width:5px;height:9px;border:2px solid #080c14;border-top:none;border-left:none;transform:rotate(45deg)}
+.check-text{font-family:'Inter',sans-serif;font-size:13px;color:var(--dim)}
+
+/* Button */
+.btn-submit{display:flex;align-items:center;justify-content:center;width:100%;padding:13px;background:var(--accent);color:#080c14;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.btn-submit::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent 60%);pointer-events:none}
+.btn-submit:hover:not(:disabled){background:var(--accent2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(126,232,162,.25)}
+.btn-submit:active:not(:disabled){transform:translateY(0)}
+.btn-submit:disabled{opacity:.7;cursor:not-allowed}
+.btn-inner{display:flex;align-items:center;gap:8px}
+
+/* Animations */
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+.footer-note{margin-top:22px;text-align:center;font-family:'Inter',sans-serif;font-size:12px;color:var(--muted)}
+.link{color:var(--accent);text-decoration:none;transition:opacity .15s}
+.link:hover{opacity:.75;text-decoration:underline}
