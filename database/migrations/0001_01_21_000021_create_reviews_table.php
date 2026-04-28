@@ -50,7 +50,7 @@ return new class extends Migration
 
         // Rating constraint: must be between 1 and 5
         // Added as a raw statement since Blueprint doesn't support CHECK natively in all drivers
-        DB::statement('ALTER TABLE reviews ADD CONSTRAINT chk_rating CHECK (rating BETWEEN 1 AND 5)');
+        // DB::statement('ALTER TABLE reviews ADD CONSTRAINT chk_rating CHECK (rating BETWEEN 1 AND 5)');
     }
 
     public function down(): void

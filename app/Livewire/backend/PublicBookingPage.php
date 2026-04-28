@@ -14,7 +14,7 @@ use App\Models\Notification;
 use App\Models\ServiceProfile;
 use Carbon\Carbon;
 
-#[Layout('layouts.portal')]
+#[Layout('components.layouts.app')]
 class PublicBookingPage extends Component
 {
     public User          $provider;

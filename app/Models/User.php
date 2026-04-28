@@ -22,6 +22,13 @@ class User extends Authenticatable implements MustVerifyEmail
         'timezone',
         'is_marketplace_enabled',
         'stripe_connect_id',
+        'active_mode',
+        'role',
+        'suspended_at',
+        'is_marketplace_enabled',
+        'stripe_connect_id',
+        'slug',
+        'avatar_url',
     ];
 
     protected $hidden = [
@@ -36,7 +43,52 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at'      => 'datetime',
             'password'               => 'hashed',
             'is_marketplace_enabled' => 'boolean',
+            'suspended_at'         => 'datetime',
+            'is_marketplace_enabled' => 'boolean',
+            'email_verified_at'    => 'datetime',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isModerator(): bool
+    {
+        return in_array($this->role, ['admin', 'moderator']);
+    }
+
+    public function isSuspended(): bool
+    {
+        return ! is_null($this->suspended_at);
+    }
+
+    // ── Marketplace mode helpers ───────────────────────────────────
+
+
+    public function isFreelancer(): bool
+    {
+        return $this->is_marketplace_enabled
+            && in_array($this->active_mode, ['freelancer']);
+    }
+
+    public function isClient(): bool
+    {
+        return $this->active_mode === 'client';
+    }
+
+    public function switchMode(string $mode): void
+    {
+        $this->update(['active_mode' => $mode]);
+        session(['active_mode' => $mode]);
+    }
+
+    public function isMemberOfOrg(int $orgId): bool
+    {
+        return \App\Models\OrganizationMember::where('org_id', $orgId)
+            ->where('user_id', $this->id)
+            ->exists();
     }
 
     // ── Identity & Access ────────────────────────────────────────
@@ -58,8 +110,8 @@ class User extends Authenticatable implements MustVerifyEmail
     public function organizations(): BelongsToMany
     {
         return $this->belongsToMany(Organization::class, 'organization_members', 'user_id', 'org_id')
-                    ->withPivot('role', 'joined_at')
-                    ->withTimestamps();
+            ->withPivot('role', 'joined_at')
+            ->withTimestamps();
     }
 
     /** Membership records for this user */
@@ -79,7 +131,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function projects(): BelongsToMany
     {
         return $this->belongsToMany(Project::class, 'project_members', 'user_id', 'project_id')
-                    ->withPivot('role', 'added_at');
+            ->withPivot('role', 'added_at');
     }
 
     // ── Tasks ────────────────────────────────────────────────────
@@ -114,7 +166,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function unreadNotifications(): HasMany
     {
         return $this->hasMany(Notification::class, 'user_id')
-                    ->whereNull('read_at');
+            ->whereNull('read_at');
     }
 
     // ── Portfolio & Archive ──────────────────────────────────────
@@ -208,8 +260,8 @@ class User extends Authenticatable implements MustVerifyEmail
     public function roleInOrg(int $orgId): ?string
     {
         return $this->orgMemberships()
-                    ->where('org_id', $orgId)
-                    ->value('role');
+            ->where('org_id', $orgId)
+            ->value('role');
     }
 
     public function isOwnerOf(Organization $org): bool
@@ -217,10 +269,10 @@ class User extends Authenticatable implements MustVerifyEmail
         return $org->owner_id === $this->id;
     }
 
-    public function isMemberOfOrg(int $orgId): bool
-    {
-        return $this->orgMemberships()->where('org_id', $orgId)->exists();
-    }
+    // public function isMemberOfOrg(int $orgId): bool
+    // {
+    //     return $this->orgMemberships()->where('org_id', $orgId)->exists();
+    // }
 
     public function isMemberOfProject(int $projectId): bool
     {
@@ -241,5 +293,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->avatar
             ? \Storage::url($this->avatar)
             : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=1A5FAD&color=fff';
+    }
+
+
+    public function reviews(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Review::class, 'reviewee_id');
     }
 }

@@ -12,7 +12,7 @@ use App\Models\Booking;
 use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Leave a Review')]
 class SubmitReview extends Component
 {

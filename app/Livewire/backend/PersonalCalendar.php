@@ -13,7 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Calendar')]
 class PersonalCalendar extends Component
 {

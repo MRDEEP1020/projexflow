@@ -4,386 +4,513 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? config('app.name', 'ProjexFlow') }}</title>
+    <title>{{ $title ?? config('app.name') }}</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
-    <link href="https://unpkg.com/@livewire/flux/dist/flux.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600|syne:600,700,800|dm-mono:400,500&display=swap"
+        rel="stylesheet" />
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 
-    <!-- Tailwind CSS CDN + base layer overrides for dark theme -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    {{--
+    ─────────────────────────────────────────────────────────────────
+    Dynamic accent color based on active_mode.
+
+    DetectUserMode middleware shares $userMode with all views.
+    Client mode  → blue  (#60a5fa) — communicates trust, stability
+    Freelancer   → green (#7EE8A2) — communicates growth, earnings
+    Admin (admin routes) → always defaults to app.blade.php override
+
+    We output a <style> tag with CSS custom properties so Flux's
+    --color-accent is overridden at runtime without any build step.
+    ─────────────────────────────────────────────────────────────────
+    --}}
+    @php
+        $mode = session('active_mode', 'client');
+        $accent = $mode === 'freelancer' ? '126 232 162' : '96 165 250';
+    @endphp
     <style>
-        /* Custom Tailwind overrides to match original dark design tokens */
-        @layer base {
-            :root {
-                --bg: #080c14;
-                --surface: #0e1420;
-                --surface2: #131d2e;
-                --surface3: #1a2438;
-                --border: #1c2e45;
-                --border2: #254060;
-                --accent: #7EE8A2;
-                --accent2: #00ff94;
-                --text: #dde6f0;
-                --dim: #8da0b8;
-                --muted: #506070;
-                --danger: #ef4444;
-                --warning: #f59e0b;
-                --success: #10b981;
-                --sidebar-w: 240px;
-            }
-
-            * {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-            }
-
-            body {
-                background-color: var(--bg);
-                color: var(--text);
-                font-family: 'Inter', sans-serif;
-                -webkit-font-smoothing: antialiased;
-            }
-
-            /* Custom scrollbar - Tailwind doesn't cover this */
-            ::-webkit-scrollbar {
-                width: 5px;
-                height: 5px;
-            }
-
-            ::-webkit-scrollbar-track {
-                background: var(--bg);
-            }
-
-            ::-webkit-scrollbar-thumb {
-                background: var(--border2);
-                border-radius: 3px;
-            }
+        :root,
+        .dark {
+            --color-accent: {{ $accent }};
         }
 
-        /* Additional utilities for backdrop blur and transitions not fully covered */
+        :root,
+        .dark {
+            --header-bg: rgba(8, 12, 20, 0.85);
+        }
+
         .backdrop-blur-custom {
             backdrop-filter: blur(12px);
-        }
-
-        .transition-sidebar {
-            transition: transform 0.25s ease;
-        }
-
-        .sidebar-overlay-transition {
-            transition-property: opacity;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 200ms;
+            -webkit-backdrop-filter: blur(12px);
         }
     </style>
 </head>
 
-<body class="antialiased">
+<body class="min-h-screen bg-[#080c14] text-[#dde6f0] antialiased flex" style="font-family:'Inter',sans-serif">
+    <flux:sidebar sticky clamp>
+        <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
-    {{-- ── App shell with Tailwind ────────────────── --}}
-    <div class="flex min-h-screen bg-[#080c14]" x-data="{ sidebarOpen: false }">
-
-        {{-- ── Sidebar (Tailwind + responsive transforms) ── --}}
-        <aside
-            class="fixed lg:sticky top-0 left-0 bottom-0 z-50 w-[var(--sidebar-w)] flex-shrink-0 bg-[#0e1420] border-r border-[#1c2e45] flex flex-col transition-sidebar transform -translate-x-full lg:translate-x-0"
-            :class="{ 'translate-x-0': sidebarOpen }">
-
-            {{-- Logo --}}
-            <div class="px-[18px] pt-5 pb-4 border-b border-[#1c2e45]">
-                <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center gap-2.5 no-underline">
-                    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-                        <rect width="32" height="32" rx="7" fill="#7EE8A2" fill-opacity="0.12" />
-                        <path d="M8 10h10M8 16h14M8 22h7" stroke="#7EE8A2" stroke-width="2.5" stroke-linecap="round" />
-                        <circle cx="24" cy="22" r="4" stroke="#7EE8A2" stroke-width="2" />
-                        <path d="M24 20v2l1.5 1.5" stroke="#7EE8A2" stroke-width="1.5" stroke-linecap="round" />
-                    </svg>
-                    <span
-                        class="font-['Syne',sans-serif] text-base font-extrabold text-white tracking-tight">ProjexFlow</span>
-                </a>
+        {{-- ── Brand (changes label based on mode) ─────────────────── --}}
+        <a href="{{ $mode === 'freelancer' ? route('freelancer.dashboard') : route('client.dashboard') }}" wire:navigate
+            class="flex items-center gap-2.5 px-2 mb-2">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                style="background:rgba(var(--color-accent)/.1);border:1px solid rgba(var(--color-accent)/.2)">
+                <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+                    <path d="M6 8h10M6 14h14M6 20h7" stroke="rgb(var(--color-accent))" stroke-width="2.5"
+                        stroke-linecap="round" />
+                    <circle cx="24" cy="22" r="5" stroke="rgb(var(--color-accent))" stroke-width="2" />
+                    <path d="M24 20v2l1.5 1.5" stroke="rgb(var(--color-accent))" stroke-width="1.5"
+                        stroke-linecap="round" />
+                </svg>
             </div>
-
-            {{-- Org switcher --}}
-            <div class="px-3 py-3 pb-2 border-b border-[#1c2e45]">
-                @livewire('backend.org-switcher')
+            <div>
+                <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff">
+                    ProjexFlow
+                </span>
+                <span class="block text-[9px] font-mono uppercase tracking-widest"
+                    style="color:rgb(var(--color-accent))">
+                    {{ ucfirst($mode) }}
+                </span>
             </div>
+        </a>
 
-            {{-- Navigation --}}
-            <nav class="flex-1 overflow-y-auto py-3">
-                <div class="mb-5">
-                    <span
-                        class="block font-['DM_Mono',monospace] text-[10px] uppercase tracking-wider text-[#506070] px-4 mb-1">Workspace</span>
-
-                    <a href="{{ route('dashboard') }}" wire:navigate
-                        class="flex items-center gap-2.5 px-4 py-2 font-['Inter',sans-serif] text-[13.5px] text-[#8da0b8] no-underline transition-all duration-150 relative hover:text-[#dde6f0] hover:bg-white/5 {{ request()->routeIs('dashboard') ? 'text-[#7EE8A2] bg-[#7EE8A2]/10' : '' }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-                            class="shrink-0 opacity-70 group-hover:opacity-100">
-                            <rect x="3" y="3" width="7" height="7" />
-                            <rect x="14" y="3" width="7" height="7" />
-                            <rect x="14" y="14" width="7" height="7" />
-                            <rect x="3" y="14" width="7" height="7" />
-                        </svg>
-                        Dashboard
-                        @if (request()->routeIs('dashboard'))
-                            <span class="absolute left-0 top-1 bottom-1 w-0.5 bg-[#7EE8A2] rounded-r"></span>
-                        @endif
-                    </a>
-
-                    <a href="{{ route('backend.projectList') }}" wire:navigate
-                        class="flex items-center gap-2.5 px-4 py-2 font-['Inter',sans-serif] text-[13.5px] text-[#8da0b8] no-underline transition-all duration-150 relative hover:text-[#dde6f0] hover:bg-white/5 {{ request()->routeIs('backend.project*') ? 'text-[#7EE8A2] bg-[#7EE8A2]/10' : '' }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-                            class="shrink-0 opacity-70">
-                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-                        </svg>
-                        Projects
-                        @if (request()->routeIs('backend.project*'))
-                            <span class="absolute left-0 top-1 bottom-1 w-0.5 bg-[#7EE8A2] rounded-r"></span>
-                        @endif
-                    </a>
-
-                    <a href="{{ route('my-tasks') }}" wire:navigate
-                        class="flex items-center gap-2.5 px-4 py-2 font-['Inter',sans-serif] text-[13.5px] text-[#8da0b8] no-underline transition-all duration-150 relative hover:text-[#dde6f0] hover:bg-white/5 {{ request()->routeIs('my-tasks') ? 'text-[#7EE8A2] bg-[#7EE8A2]/10' : '' }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 11l3 3L22 4" />
-                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-                        </svg>
-                        My Tasks
-                        @if (request()->routeIs('my-tasks'))
-                            <span class="absolute left-0 top-1 bottom-1 w-0.5 bg-[#7EE8A2] rounded-r"></span>
-                        @endif
-                    </a>
-
-                    <a href="{{ route('backend.calendar') }}" wire:navigate
-                        class="flex items-center gap-2.5 px-4 py-2 font-['Inter',sans-serif] text-[13.5px] text-[#8da0b8] no-underline transition-all duration-150 relative hover:text-[#dde6f0] hover:bg-white/5 {{ request()->routeIs('backend.calendar') ? 'text-[#7EE8A2] bg-[#7EE8A2]/10' : '' }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        Calendar
-                        @if (request()->routeIs('backend.calendar'))
-                            <span class="absolute left-0 top-1 bottom-1 w-0.5 bg-[#7EE8A2] rounded-r"></span>
-                        @endif
-                    </a>
-
-                    <a href="{{ route('backend.projectArchived') }}" wire:navigate
-                        class="flex items-center gap-2.5 px-4 py-2 font-['Inter',sans-serif] text-[13.5px] text-[#8da0b8] no-underline transition-all duration-150 relative hover:text-[#dde6f0] hover:bg-white/5 {{ request()->routeIs('archive') ? 'text-[#7EE8A2] bg-[#7EE8A2]/10' : '' }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        Archived
-                        @if (request()->routeIs('backend.projectArchived'))
-                            <span class="absolute left-0 top-1 bottom-1 w-0.5 bg-[#7EE8A2] rounded-r"></span>
-                        @endif
-                    </a>
-                </div>
-
-                <div class="mb-5">
-                    <span
-                        class="block font-['DM_Mono',monospace] text-[10px] uppercase tracking-wider text-[#506070] px-4 mb-1">Marketplace</span>
-
-                    <a href="{{ route('backend.marketplace') }}" wire:navigate
-                        class="flex items-center gap-2.5 px-4 py-2 font-['Inter',sans-serif] text-[13.5px] text-[#8da0b8] no-underline transition-all duration-150 relative hover:text-[#dde6f0] hover:bg-white/5 {{ request()->routeIs('marketplace*') ? 'text-[#7EE8A2] bg-[#7EE8A2]/10' : '' }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                            <line x1="3" y1="6" x2="21" y2="6" />
-                            <path d="M16 10a4 4 0 01-8 0" />
-                        </svg>
-                        Marketplace
-                        @if (request()->routeIs('backend.marketplace'))
-                            <span class="absolute left-0 top-1 bottom-1 w-0.5 bg-[#7EE8A2] rounded-r"></span>
-                        @endif
-                    </a>
-
-                    <a href="{{ route('backend.bookingInbox') }}" wire:navigate
-                        class="flex items-center gap-2.5 px-4 py-2 font-['Inter',sans-serif] text-[13.5px] text-[#8da0b8] no-underline transition-all duration-150 relative hover:text-[#dde6f0] hover:bg-white/5 {{ request()->routeIs('backend.bookingInbox') ? 'text-[#7EE8A2] bg-[#7EE8A2]/10' : '' }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                            <circle cx="9" cy="7" r="4" />
-                            <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                            <path d="M16 3.13a4 4 0 010 7.75" />
-                        </svg>
-                        Bookings
-                        @if (request()->routeIs('backend.bookingInbox'))
-                            <span class="absolute left-0 top-1 bottom-1 w-0.5 bg-[#7EE8A2] rounded-r"></span>
-                        @endif
-                    </a>
-
-                    <a href="{{ route('backend.wallet') }}" wire:navigate
-                        class="flex items-center gap-2.5 px-4 py-2 font-['Inter',sans-serif] text-[13.5px] text-[#8da0b8] no-underline transition-all duration-150 relative hover:text-[#dde6f0] hover:bg-white/5 {{ request()->routeIs('backend.wallet') ? 'text-[#7EE8A2] bg-[#7EE8A2]/10' : '' }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 12V7H5a2 2 0 010-4h14v4" />
-                            <path d="M3 5v14a2 2 0 002 2h16v-5" />
-                            <path d="M18 12a2 2 0 000 4h4v-4z" />
-                        </svg>
-                        Wallet
-                        @if (request()->routeIs('backend.wallet'))
-                            <span class="absolute left-0 top-1 bottom-1 w-0.5 bg-[#7EE8A2] rounded-r"></span>
-                        @endif
-                    </a>
-                </div>
-            </nav>
-
-            {{-- Sidebar footer user --}}
-            <div class="p-3 border-t border-[#1c2e45]">
-                <a href="{{ route('settings.profile') }}" wire:navigate
-                    class="flex items-center gap-2.5 p-2 rounded-lg no-underline transition-colors duration-150 hover:bg-[#131d2e] cursor-pointer w-full">
-                    <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}"
-                        class="w-8 h-8 rounded-full object-cover border border-[#254060] shrink-0">
-                    <div class="flex-1 min-w-0">
-                        <span
-                            class="block font-['Inter',sans-serif] text-[12.5px] font-medium text-[#dde6f0] truncate">{{ Auth::user()->name }}</span>
-                        <span
-                            class="block font-['Inter',sans-serif] text-[11px] text-[#506070] truncate">{{ Auth::user()->email }}</span>
-                    </div>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.8" stroke-linecap="round" class="text-[#506070] shrink-0">
-                        <path
-                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <circle cx="12" cy="12" r="3" />
-                    </svg>
-                </a>
-            </div>
-        </aside>
-
-        {{-- ── Main area with proper margin-left on lg ── --}}
-        <div class="flex-1 min-w-0 flex flex-col">
-
-            {{-- Top navbar --}}
-            <header
-                class="sticky top-0 z-40 flex items-center gap-4 px-6 h-14 bg-[#080c14]/95 backdrop-blur-custom border-b border-[#1c2e45]">
-                {{-- Mobile menu toggle --}}
-                <button
-                    class="lg:hidden flex items-center bg-transparent border-none text-[#8da0b8] cursor-pointer p-1"
-                    @click="sidebarOpen = !sidebarOpen" aria-label="Toggle menu">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round">
-                        <line x1="3" y1="6" x2="21" y2="6" />
-                        <line x1="3" y1="12" x2="21" y2="12" />
-                        <line x1="3" y1="18" x2="21" y2="18" />
-                    </svg>
-                </button>
-
-                <div class="flex-1 font-['Syne',sans-serif] text-[15px] font-semibold text-[#dde6f0]">
-                    {{ $header ?? '' }}
-                </div>
-
-                <div class="flex items-center gap-2">
-                    {{-- Notification bell component --}}
-                    @livewire('backend.notification-bell')
-
-                    {{-- User menu dropdown --}}
-                    <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open"
-                            class="flex items-center gap-1.5 bg-transparent border-none cursor-pointer text-[#8da0b8] p-1 rounded-md hover:bg-[#131d2e] transition-colors"
-                            :aria-expanded="open">
-                            <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}"
-                                class="w-7 h-7 rounded-full object-cover border border-[#254060]">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                                <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                        </button>
-                        <div class="absolute right-0 top-full mt-2 w-56 bg-[#0e1420] border border-[#1c2e45] rounded-xl overflow-hidden shadow-xl z-50"
-                            x-show="open" @click.away="open = false"
-                            x-transition:enter="transition ease-out duration-150"
-                            x-transition:enter-start="opacity-0 scale-95"
-                            x-transition:enter-end="opacity-100 scale-100"
-                            x-transition:leave="transition ease-in duration-100"
-                            x-transition:leave-start="opacity-100 scale-100"
-                            x-transition:leave-end="opacity-0 scale-95" style="display: none;">
-                            <div class="px-3.5 py-3">
-                                <span
-                                    class="block font-['Inter',sans-serif] text-[13px] font-medium text-[#dde6f0]">{{ Auth::user()->name }}</span>
-                                <span
-                                    class="block font-['Inter',sans-serif] text-[11.5px] text-[#506070] mt-0.5">{{ Auth::user()->email }}</span>
-                            </div>
-                            <div class="h-px bg-[#1c2e45]"></div>
-                            <a href="{{ route('settings.profile') }}" wire:navigate
-                                class="flex items-center gap-2.5 px-3.5 py-2.5 font-['Inter',sans-serif] text-[13px] text-[#8da0b8] no-underline transition-all hover:text-[#dde6f0] hover:bg-[#131d2e]">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                                    <circle cx="12" cy="7" r="4" />
-                                </svg>
-                                Profile Settings
-                            </a>
-                            @if (Auth::user()->is_marketplace_enabled)
-                                <a href="{{ route('backend.profilePage', Auth::user()) }}" wire:navigate
-                                    class="flex items-center gap-2.5 px-3.5 py-2.5 font-['Inter',sans-serif] text-[13px] text-[#8da0b8] no-underline transition-all hover:text-[#dde6f0] hover:bg-[#131d2e]">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                                        <circle cx="12" cy="12" r="10" />
-                                        <path d="M12 8v4l3 3" />
-                                    </svg>
-                                    My Public Profile
-                                </a>
-                            @endif
-                            <div class="h-px bg-[#1c2e45]"></div>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit"
-                                    class="w-full flex items-center gap-2.5 px-3.5 py-2.5 font-['Inter',sans-serif] text-[13px] text-[#8da0b8] no-underline transition-all hover:text-[#ef4444] hover:bg-[#131d2e] text-left">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                                        <polyline points="16 17 21 12 16 7" />
-                                        <line x1="21" y1="12" x2="9" y2="12" />
-                                    </svg>
-                                    Sign out
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            {{-- Page content --}}
-            <main class="flex-1 p-7 lg:p-9">
-                {{ $slot }}
-            </main>
+        {{-- ── Mode switcher ──────────────────────────────────────────── --}}
+        <div class="px-2 mb-3">
+            @livewire('backend.mode-switcher')
         </div>
 
-        {{-- Mobile sidebar overlay --}}
-        <div class="fixed inset-0 bg-black/60 z-40 lg:hidden sidebar-overlay-transition" x-show="sidebarOpen"
-            @click="sidebarOpen = false" x-transition:enter="ease-out duration-200"
-            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-            x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0" style="display: none;"></div>
+        {{-- ═══════════════════════════════════════════════════════════
+         CLIENT NAV — shown when active_mode = 'client'
+    ═══════════════════════════════════════════════════════════════ --}}
+        @if ($mode === 'client')
+            <flux:navlist variant="outline">
+
+                <flux:navlist.group heading="Overview" class="mt-1">
+                    <flux:navlist.item icon="home" href="{{ route('client.dashboard') }}" wire:navigate
+                        :current="request()->routeIs('client.dashboard')">
+                        Dashboard
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="calendar-days" href="{{ route('backend.calendar') }}" wire:navigate
+                        :current="request()->routeIs('backend.calendar')">
+                        Calendar
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group heading="My projects" class="mt-2">
+                    <flux:navlist.item icon="rectangle-group" href="{{ route('backend.projectList') }}" wire:navigate
+                        :current="request()->routeIs('backend.project*')">
+                        Projects
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="check-circle" href="{{ route('my-tasks') }}" wire:navigate
+                        :current="request()->routeIs('my-tasks')">
+                        Tasks
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="archive-box" href="{{ route('backend.projectArchived') }}" wire:navigate
+                        :current="request()->routeIs('backend.projectArchived')">
+                        Archive
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group heading="Hire talent" class="mt-2">
+                    <flux:navlist.item icon="magnifying-glass" href="{{ route('client.marketplace') }}" wire:navigate
+                        :current="request()->routeIs('client.marketplace')">
+                        Find freelancers
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="briefcase" href="{{ route('backend.jobBoard') }}" wire:navigate
+                        :current="request()->routeIs('backend.jobBoard')">
+                        Job board
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="clipboard-document-list" href="{{ route('backend.myJobs') }}"
+                        wire:navigate :current="request()->routeIs('backend.myJobs')">
+                        My job posts
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group heading="Payments" class="mt-2">
+                    <flux:navlist.item icon="document-text" href="{{ route('backend.contracts') }}" wire:navigate
+                        :current="request()->routeIs('backend.contracts')">
+                        Contracts
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="banknotes" href="{{ route('backend.wallet') }}" wire:navigate
+                        :current="request()->routeIs('backend.wallet')">
+                        Wallet
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="calendar" href="{{ route('backend.bookingInbox') }}" wire:navigate
+                        :current="request()->routeIs('backend.bookingInbox')">
+                        Bookings
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+            </flux:navlist>
+        @endif
+
+        {{-- ═══════════════════════════════════════════════════════════
+         FREELANCER NAV — shown when active_mode = 'freelancer'
+    ═══════════════════════════════════════════════════════════════ --}}
+        @if ($mode === 'freelancer')
+            <flux:navlist variant="outline">
+
+                <flux:navlist.group heading="Overview" class="mt-1">
+                    <flux:navlist.item icon="home" href="{{ route('freelancer.dashboard') }}" wire:navigate
+                        :current="request()->routeIs('freelancer.dashboard')">
+                        Dashboard
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="calendar-days" href="{{ route('backend.calendar') }}" wire:navigate
+                        :current="request()->routeIs('backend.calendar')">
+                        Calendar
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group heading="My work" class="mt-2">
+                    <flux:navlist.item icon="check-circle" href="{{ route('my-tasks') }}" wire:navigate
+                        :current="request()->routeIs('my-tasks')">
+                        My tasks
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="rectangle-group" href="{{ route('backend.projectList') }}" wire:navigate
+                        :current="request()->routeIs('backend.project*')">
+                        Projects I'm on
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="paper-airplane" href="{{ route('backend.myApplications') }}" wire:navigate
+                        :current="request()->routeIs('backend.myApplications')">
+                        My applications
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group heading="Marketplace" class="mt-2">
+                    <flux:navlist.item icon="user-circle" href="{{ route('backend.editProfile') }}" wire:navigate
+                        :current="request()->routeIs('backend.editProfile')">
+                        My profile
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="magnifying-glass" href="{{ route('backend.jobBoard') }}" wire:navigate
+                        :current="request()->routeIs('backend.jobBoard')">
+                        Browse jobs
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="calendar" href="{{ route('backend.availabilitySettings') }}" wire:navigate
+                        :current="request()->routeIs('backend.availabilitySettings')">
+                        Availability
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="star" href="{{ route('backend.profilePage', Auth::user()->name) }}"
+                        wire:navigate>
+                        Public profile ↗
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group heading="Earnings" class="mt-2">
+                    <flux:navlist.item icon="document-text" href="{{ route('backend.contracts') }}" wire:navigate
+                        :current="request()->routeIs('backend.contracts')">
+                        Contracts
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="banknotes" href="{{ route('backend.wallet') }}" wire:navigate
+                        :current="request()->routeIs('backend.wallet')">
+                        Wallet & payouts
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="video-camera" href="{{ route('backend.bookingInbox') }}" wire:navigate
+                        :current="request()->routeIs('backend.bookingInbox')">
+                        Booking inbox
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+            </flux:navlist>
+        @endif
+
+        <flux:spacer />
+
+        {{-- ── User footer ─────────────────────────────────────────────── --}}
+        <div class="border-t border-[#1c2e45] pt-3 pb-1 px-1">
+            <flux:dropdown position="top" align="start" class="w-full">
+                <flux:button variant="ghost" class="w-full !justify-start gap-2.5 px-2">
+                    <flux:avatar name="{{ Auth::user()->name }}" src="{{ Auth::user()->avatar_url }}"
+                        size="xs" />
+                    <div class="flex-1 min-w-0 text-left">
+                        <p class="text-xs font-semibold text-white truncate">{{ Auth::user()->name }}</p>
+                        <p class="text-[10px] truncate" style="color:rgb(var(--color-accent))">
+                            {{ ucfirst($mode) }} mode
+                        </p>
+                    </div>
+                    <flux:icon.chevron-up-down class="size-3.5 text-[#506070] flex-shrink-0" />
+                </flux:button>
+
+                <flux:menu class="w-52">
+                    <flux:menu.item icon="user-circle" href="{{ route('settings.profile') }}" wire:navigate>
+                        Profile settings
+                    </flux:menu.item>
+                    @if ($mode === 'freelancer')
+                        <flux:menu.item icon="star" href="{{ route('backend.editProfile') }}" wire:navigate>
+                            Marketplace profile
+                        </flux:menu.item>
+                    @endif
+                    @if ($mode === 'client')
+                        <flux:menu.item icon="building-office" href="{{ route('backend.create') }}" wire:navigate>
+                            New organization
+                        </flux:menu.item>
+                    @endif
+                    @if (Auth::user()->isAdmin())
+                        <flux:menu.separator />
+                        <flux:menu.item icon="shield-check" href="{{ route('admin.dashboard') }}"
+                            class="text-red-400">
+                            Admin panel
+                        </flux:menu.item>
+                    @endif
+                    <flux:menu.separator />
+                    <flux:menu.item icon="square-arrow-right-enter" href="{{ route('logout') }}"
+                        onclick="event.preventDefault(); document.getElementById('logout-form').submit()">
+                        Sign out
+                    </flux:menu.item>
+                </flux:menu>
+            </flux:dropdown>
+
+            <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
+                @csrf
+            </form>
+        </div>
+    </flux:sidebar>
+
+    {{-- ── Main content area ────────────────────────────────────────── --}}
+    {{-- MAIN CONTENT WITH CUSTOM NAVBAR --}}
+    <div class="flex-1 flex flex-col min-h-screen">
+        {{-- Top navbar with theme switcher --}}
+        <header
+            class="sticky top-0 z-40 h-[52px] flex items-center gap-3 px-5
+               bg-[rgba(8,12,20,0.88)] backdrop-blur-md
+               border-b border-[#1c2e45] shrink-0">
+
+            {{-- Mobile toggle --}}
+            <flux:sidebar.toggle class="lg:hidden" icon="bars-2" />
+
+            {{-- Page title --}}
+            <div class="flex-1 font-['Syne',sans-serif] text-[14px] font-bold text-[#dde6f0]">
+                {{ $header ?? '' }}
+            </div>
+
+            <div class="flex items-center gap-1.5">
+
+                {{-- Theme picker --}}
+                <div class="relative" x-data="{
+                    open: false,
+                    themes: [
+                        { id: 'dark', label: 'Dark', icon: '🌑' },
+                        { id: 'light', label: 'Light', icon: '☀️' },
+                        { id: 'ocean', label: 'Ocean', icon: '🌊' },
+                        { id: 'midnight', label: 'Midnight', icon: '🌌' },
+                        { id: 'forest', label: 'Forest', icon: '🌿' },
+                    ],
+                    current: localStorage.getItem('theme') || 'dark',
+                    set(id) {
+                        this.current = id;
+                        this.open = false;
+                        document.documentElement.setAttribute('data-theme', id);
+                        localStorage.setItem('theme', id);
+                    }
+                }">
+                    <button @click="open = !open"
+                        class="flex items-center gap-2 h-[34px] px-2.5
+                       bg-[#0f1c2e] border border-[#1c2e45] rounded-lg
+                       text-[#8da0b8] text-[12px] font-medium
+                       hover:bg-[#14243a] hover:border-[#2a4060] transition-all">
+                        <span x-text="themes.find(t=>t.id===current)?.icon ?? '🌑'"></span>
+                        <span class="hidden sm:inline"
+                            x-text="themes.find(t=>t.id===current)?.label ?? 'Dark'"></span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </button>
+
+                    <div x-show="open" @click.away="open = false"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 -translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        class="absolute right-0 top-full mt-2 w-44
+                        bg-[#0d1928] border border-[#1c2e45] rounded-xl
+                        shadow-2xl overflow-hidden z-50"
+                        style="display:none">
+                        <div class="px-3 py-2 border-b border-[#1c2e45]">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-[#506070]">Theme</span>
+                        </div>
+                        <template x-for="t in themes" :key="t.id">
+                            <button @click="set(t.id)"
+                                class="w-full flex items-center gap-3 px-3 py-2.5 text-[13px] text-left
+                               hover:bg-[#14243a] transition-colors"
+                                :class="current === t.id ? 'text-[#60a5fa]' : 'text-[#8da0b8]'">
+                                <span x-text="t.icon" style="font-size:14px"></span>
+                                <span class="flex-1" x-text="t.label"></span>
+                                <svg x-show="current === t.id" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- Notification bell --}}
+                @livewire('backend.notification-bell')
+
+                {{-- User chip --}}
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open"
+                        class="flex items-center gap-2 h-[34px] pl-1.5 pr-2.5
+                       bg-[#0f1c2e] border border-[#1c2e45] rounded-lg
+                       hover:bg-[#14243a] hover:border-[#2a4060] transition-all">
+                        <img src="{{ Auth::user()->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=1d4ed8&color=fff' }}"
+                            alt="{{ Auth::user()->name }}"
+                            class="w-6 h-6 rounded-full object-cover border border-[rgba(96,165,250,.3)]">
+                        <span class="hidden sm:inline text-[12px] font-medium text-[#dde6f0] max-w-[100px] truncate">
+                            {{ Str::before(Auth::user()->name, ' ') }}
+                        </span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#506070"
+                            stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </button>
+
+                    <div x-show="open" @click.away="open = false"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 -translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        class="absolute right-0 top-full mt-2 w-56
+            bg-[#0d1928] border border-[#1c2e45] rounded-xl
+            shadow-2xl overflow-hidden z-50"
+                        style="display:none">
+
+                        {{-- User info header --}}
+                        <div class="px-3.5 py-3 border-b border-[#1c2e45]">
+                            <p class="text-[13px] font-semibold text-[#dde6f0]">{{ Auth::user()->name }}</p>
+                            <p class="text-[11px] text-[#506070] mt-0.5">{{ Auth::user()->email }}</p>
+                        </div>
+
+                        {{-- Profile --}}
+                        <a href="{{ route('settings.profile') }}" wire:navigate
+                            class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#8da0b8] no-underline hover:bg-[#14243a] hover:text-[#dde6f0] transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.8">
+                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            Profile settings
+                        </a>
+
+                        {{-- Notifications --}}
+                        @php
+                            $unread = \App\Models\Notification::where('user_id', Auth::id())
+                                ->whereNull('read_at')
+                                ->count();
+                        @endphp
+                        <a href="{{ route('backend.notifications') }}" wire:navigate
+                            class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#8da0b8] no-underline hover:bg-[#14243a] hover:text-[#dde6f0] transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.8">
+                                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 01-3.46 0" />
+                            </svg>
+                            Notifications
+                            @if ($unread > 0)
+                                <span
+                                    class="ml-auto text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 rounded-full px-1.5 py-0.5 leading-none">
+                                    {{ $unread > 9 ? '9+' : $unread }}
+                                </span>
+                            @endif
+                        </a>
+
+                        {{-- Settings --}}
+                        <a href="{{ route('settings.profile') }}" wire:navigate
+                            class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#8da0b8] no-underline hover:bg-[#14243a] hover:text-[#dde6f0] transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.8">
+                                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                                <path
+                                    d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                            </svg>
+                            Settings
+                        </a>
+
+                        @if ($mode === 'freelancer')
+                            <div class="h-px bg-[#1c2e45] my-1"></div>
+                            <a href="{{ route('backend.editProfile') }}" wire:navigate
+                                class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#8da0b8] no-underline hover:bg-[#14243a] hover:text-[#dde6f0] transition-colors">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.8">
+                                    <polygon
+                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                </svg>
+                                Marketplace profile
+                            </a>
+                        @endif
+
+                        @if ($mode === 'client')
+                            <div class="h-px bg-[#1c2e45] my-1"></div>
+                            <a href="{{ route('backend.create') }}" wire:navigate
+                                class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#8da0b8] no-underline hover:bg-[#14243a] hover:text-[#dde6f0] transition-colors">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.8">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                                    <polyline points="9 22 9 12 15 12 15 22" />
+                                </svg>
+                                New organization
+                            </a>
+                        @endif
+
+                        @if (Auth::user()->isAdmin())
+                            <div class="h-px bg-[#1c2e45] my-1"></div>
+                            <a href="{{ route('admin.dashboard') }}"
+                                class="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-red-400 no-underline hover:bg-[#14243a] transition-colors">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.8">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                </svg>
+                                Admin panel
+                            </a>
+                        @endif
+
+                        <div class="h-px bg-[#1c2e45] my-1"></div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit"
+                                class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#8da0b8] hover:text-red-400 hover:bg-[#14243a] transition-colors text-left">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.8">
+                                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                                    <polyline points="16 17 21 12 16 7" />
+                                    <line x1="21" y1="12" x2="9" y2="12" />
+                                </svg>
+                                Sign out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </header>
+
+        {{-- Page content - Remove extra padding if content already has it --}}
+        <main class="flex-1 overflow-y-auto">
+            {{ $slot }}
+        </main>
     </div>
 
-    {{-- Toast notifications (Tailwind styled) --}}
-    <div id="toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-2" x-data="{ toasts: [] }"
-        @toast.window="toasts.push({ id: Date.now(), ...$event.detail[0] }); setTimeout(() => toasts.shift(), 3500)">
-        <template x-for="toast in toasts" :key="toast.id">
-            <div class="px-4 py-3 rounded-lg font-['Inter',sans-serif] text-[13.5px] font-medium max-w-xs shadow-lg"
+    {{-- ── Toast system ─────────────────────────────────────────────── --}}
+    <div x-data="{ toasts: [] }"
+        @toast.window="toasts.push({ id: Date.now(), ...$event.detail[0] }); setTimeout(() => toasts.shift(), 3500)"
+        class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
+        <template x-for="t in toasts" :key="t.id">
+            <div x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="px-4 py-3 rounded-xl text-sm font-medium shadow-2xl max-w-sm pointer-events-auto"
                 :class="{
-                    'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300': toast.type === 'success',
-                    'bg-red-500/12 border border-red-500/25 text-red-300': toast.type === 'error',
-                    'bg-blue-500/12 border border-blue-500/25 text-blue-300': toast.type === 'info',
-                    'bg-amber-500/12 border border-amber-500/25 text-amber-300': toast.type === 'warning'
+                    'bg-emerald-950/95 border border-emerald-700/50 text-emerald-300': t.type === 'success',
+                    'bg-red-950/95 border border-red-700/50 text-red-300': t.type === 'error',
+                    'bg-amber-950/95 border border-amber-700/50 text-amber-300': t.type === 'warning',
+                    'bg-[#0d1520]/95 border border-[#1c2e45] text-[#8da0b8]': !t.type || t.type === 'info',
                 }"
-                x-transition>
-                <span x-text="toast.message"></span>
-            </div>
+                x-text="t.message"></div>
         </template>
     </div>
 

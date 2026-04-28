@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('New Project')]
 class projectCreate extends Component
 {

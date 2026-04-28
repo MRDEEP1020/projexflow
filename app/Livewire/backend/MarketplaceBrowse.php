@@ -10,7 +10,7 @@ use Livewire\WithPagination;
 use App\Models\ServiceProfile;
 use Illuminate\Support\Facades\DB;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Marketplace')]
 class MarketplaceBrowse extends Component
 {

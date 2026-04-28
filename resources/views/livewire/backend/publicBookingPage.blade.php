@@ -227,6 +227,4 @@
     </div>
 </div>
 
-<style>
-    @keyframes popIn { from{opacity:0;transform:scale(.7)} to{opacity:1;transform:scale(1)} }
-</style>
+

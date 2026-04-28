@@ -28,7 +28,7 @@ class PasswordResetTest extends TestCase
 
         Volt::test('auth.forgot-password')
             ->set('email', $user->email)
-            ->call('sendPasswordResetLink');
+            ->call('sendResetLink');
 
         Notification::assertSentTo($user, ResetPassword::class);
     }
@@ -41,7 +41,7 @@ class PasswordResetTest extends TestCase
 
         Volt::test('auth.forgot-password')
             ->set('email', $user->email)
-            ->call('sendPasswordResetLink');
+            ->call('sendResetLink');
 
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
             $response = $this->get('/reset-password/'.$notification->token);
@@ -60,7 +60,7 @@ class PasswordResetTest extends TestCase
 
         Volt::test('auth.forgot-password')
             ->set('email', $user->email)
-            ->call('sendPasswordResetLink');
+            ->call('sendResetLink');
 
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
             $response = Volt::test('auth.reset-password', ['token' => $notification->token])

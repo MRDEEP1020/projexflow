@@ -13,7 +13,7 @@ use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Request;
 
-#[Layout('layouts.portal')]
+#[Layout('components.layouts.app')]
 class projectPortal extends Component
 {
     // Token and project ID are protected from external manipulation
@@ -75,8 +75,8 @@ class projectPortal extends Component
     public function submitFeedback(): void
     {
         $project = Project::where('client_token', $this->token)
-                          ->where('client_portal_enabled', true)
-                          ->firstOrFail();
+            ->where('client_portal_enabled', true)
+            ->firstOrFail();
 
         $this->validate([
             'feedbackType'      => ['required', 'in:comment,approval,revision_request'],
@@ -97,8 +97,8 @@ class projectPortal extends Component
 
         // Notify project manager
         $pm = $project->projectMembers()
-                      ->where('role', 'manager')
-                      ->first();
+            ->where('role', 'manager')
+            ->first();
 
         if ($pm) {
             Notification::create([
@@ -122,20 +122,23 @@ class projectPortal extends Component
     public function project(): Project
     {
         return Project::where('client_token', $this->token)
-                      ->with(['milestones' => fn ($q) => $q->orderBy('due_date')])
-                      ->firstOrFail();
+            ->with([
+                'org',  // ← Add this to eager-load the organization
+                'milestones' => fn($q) => $q->orderBy('due_date')
+            ])
+            ->firstOrFail();
     }
 
     #[Computed]
     public function doneTasks()
     {
         return Task::where('project_id', $this->projectId)
-                   ->where('status', 'done')
-                   ->whereNotNull('deliverable_url')
-                   ->whereNull('parent_task_id')
-                   ->select('id','title','deliverable_type','deliverable_url','deliverable_note','completed_at','milestone_id')
-                   ->orderByDesc('completed_at')
-                   ->get();
+            ->where('status', 'done')
+            ->whereNotNull('deliverable_url')
+            ->whereNull('parent_task_id')
+            ->select('id', 'title', 'deliverable_type', 'deliverable_url', 'deliverable_note', 'completed_at', 'milestone_id')
+            ->orderByDesc('completed_at')
+            ->get();
     }
 
     #[Computed]

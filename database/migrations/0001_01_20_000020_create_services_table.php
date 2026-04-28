@@ -29,6 +29,7 @@ return new class extends Migration
                 'consulting',
                 'engineering',
                 'education',
+                'software_dev',
                 'other',
             ])->default('other');
 

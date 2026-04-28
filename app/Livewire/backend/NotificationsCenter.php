@@ -10,7 +10,7 @@ use Livewire\WithPagination;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Notifications')]
 class NotificationsCenter extends Component
 {

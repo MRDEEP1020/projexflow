@@ -12,7 +12,7 @@ use App\Models\Booking;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.meeting')]
+#[Layout('components.layouts.app')]
 #[Title('Meeting Room')]
 class ProjectMeetingRoom extends Component
 {

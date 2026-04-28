@@ -10,7 +10,7 @@ use App\Models\Task;
 use App\Models\ProjectMember;
 use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('My Tasks')]
 class MyTask extends Component
 {

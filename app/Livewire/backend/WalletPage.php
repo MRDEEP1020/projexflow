@@ -13,7 +13,7 @@ use App\Jobs\ProcessWithdrawal;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Wallet')]
 class WalletPage extends Component
 {

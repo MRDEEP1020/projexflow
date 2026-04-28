@@ -1,0 +1,12 @@
+{
+  "buildCommand": "composer install --no-dev && npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": "public",
+  "framework": "laravel",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.php"
+    }
+  ]
+}

@@ -13,7 +13,7 @@ use App\Models\PortfolioItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('My Marketplace Profile')]
 class EditProfile extends Component
 {

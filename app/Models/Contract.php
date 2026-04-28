@@ -35,9 +35,9 @@ class Contract extends Model
     protected function casts(): array
     {
         return [
-            'total_amount'             => 'decimal:2',
-            'deposit_amount'           => 'decimal:2',
-            'platform_fee_percentage'  => 'decimal:2',
+            'total_amount'             => 'float',
+            'deposit_amount'           => 'float',
+            'platform_fee_percentage'  => 'float',
             'work_submitted_at'        => 'datetime',
             'auto_release_at'          => 'datetime',
             'completed_at'             => 'datetime',
@@ -149,20 +149,20 @@ class Contract extends Model
         ]);
     }
 
-    public function dispute(string $reason): Dispute
-    {
-        $this->update(['status' => 'disputed']);
+    // public function dispute(string $reason): Dispute
+    // {
+    //     $this->update(['status' => 'disputed']);
 
-        return Dispute::create([
-            'contract_id' => $this->id,
-            'raised_by'   => auth()->id(),
-            'against'     => auth()->id() === $this->client_id
-                             ? $this->freelancer_id
-                             : $this->client_id,
-            'reason'      => $reason,
-            'description' => '',
-        ]);
-    }
+    //     return Dispute::create([
+    //         'contract_id' => $this->id,
+    //         'raised_by'   => auth()->id(),
+    //         'against'     => auth()->id() === $this->client_id
+    //                          ? $this->freelancer_id
+    //                          : $this->client_id,
+    //         'reason'      => $reason,
+    //         'description' => '',
+    //     ]);
+    // }
 
     // ── Financial Calculations ───────────────────────────────────
 

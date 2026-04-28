@@ -13,7 +13,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 class projectSettings extends Component
 {
     public Project $project;

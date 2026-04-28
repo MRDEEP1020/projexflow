@@ -19,7 +19,7 @@
 
         <flux:select wire:model.live="type" class="w-44">
             @foreach($this->notificationTypes as $val => $label)
-                <flux:option value="{{ $val }}">{{ $label }}</flux:option>
+                <flux:select.option value="{{ $val }}">{{ $label }}</flux:select.option>
             @endforeach
         </flux:select>
 

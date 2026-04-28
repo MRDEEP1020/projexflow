@@ -13,7 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Bookings')]
 class BookingInbox extends Component
 {

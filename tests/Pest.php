@@ -1,47 +1,135 @@
 <?php
 
-/*
-|--------------------------------------------------------------------------
-| Test Case
-|--------------------------------------------------------------------------
-|
-| The closure you provide to your test functions is always bound to a specific PHPUnit test
-| case class. By default, that class is "PHPUnit\Framework\TestCase". Of course, you may
-| need to change it using the "pest()" function to bind a different classes or traits.
-|
-*/
+// tests/Pest.php
+// Central configuration for the entire ProjexFlow test suite
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
-    ->in('Feature');
+use App\Models\User;
+use App\Models\Organization;
+use App\Models\OrganizationMember;
+use App\Models\Project;
+use App\Models\Task;
+use App\Models\ServiceProfile;
+use App\Models\Contract;
+use App\Models\JobPost;
+use App\Models\Booking;
+use App\Models\Wallet;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-/*
-|--------------------------------------------------------------------------
-| Expectations
-|--------------------------------------------------------------------------
-|
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
-|
-*/
+uses(RefreshDatabase::class)->in('Feature');
+// tests/Pest.php
+// uses(Tests\TestCase::class)->in('Feature', 'Unit');
+// ── Global helper functions ────────────────────────────────────────
 
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
+/**
+ * Create a fully-set-up client user with org + session.
+ */
+function clientUser(array $attrs = []): User
+{
+    $user = User::factory()->create(array_merge([
+        'role'        => 'user',
+        'active_mode' => 'client',
+    ], $attrs));
+
+    $org = Organization::factory()->create(['owner_id' => $user->id]);
+
+    OrganizationMember::create([
+        'org_id'    => $org->id,
+        'user_id'   => $user->id,
+        'role'      => 'owner',
+        'joined_at' => now(),
+    ]);
+
+    // Set session state
+    session(['active_org_id' => $org->id, 'active_mode' => 'client']);
+
+    return $user;
+}
+
+/**
+ * Create a fully-set-up freelancer user with service profile.
+ */
+function freelancerUser(array $attrs = []): User
+{
+    $user = User::factory()->create(array_merge([
+        'role'                   => 'user',
+        'active_mode'            => 'freelancer',
+        'is_marketplace_enabled' => true,
+    ], $attrs));
+
+    ServiceProfile::factory()->create([
+        'user_id'             => $user->id,
+        'availability_status' => 'open_to_work',
+        'hourly_rate'         => 50,
+        'avg_rating'          => 4.5,
+        'total_reviews'       => 10,
+    ]);
+
+    session(['active_mode' => 'freelancer']);
+
+    return $user;
+}
+
+/**
+ * Create an admin user.
+ */
+function adminUser(array $attrs = []): User
+{
+    return User::factory()->create(array_merge([
+        'role' => 'admin',
+    ], $attrs));
+}
+
+/**
+ * Create a project owned by the given user's active org.
+ */
+function projectFor(User $user, array $attrs = []): Project
+{
+    $orgId = session('active_org_id')
+        ?? OrganizationMember::where('user_id', $user->id)->value('org_id');
+
+    return Project::factory()->create(array_merge([
+        'org_id' => $orgId,
+        'status' => 'active',
+    ], $attrs));
+}
+
+/**
+ * Create a contract between client and freelancer.
+ */
+function contractBetween(User $client, User $freelancer, array $attrs = []): Contract
+{
+    return Contract::factory()->create(array_merge([
+        'client_id'              => $client->id,
+        'freelancer_id'          => $freelancer->id,
+        'total_amount'           => 1000,
+        'deposit_amount'         => 300,
+        'deposit_percentage'     => 30,
+        'platform_fee_percentage'=> 10,
+        'platform_fee_amount'    => 100,
+        'currency'               => 'USD',
+        'status'                 => 'active',
+    ], $attrs));
+}
+
+/**
+ * Create a wallet for a user with a given balance.
+ */
+function walletFor(User $user, float $balance = 500): Wallet
+{
+    return Wallet::factory()->create([
+        'user_id'           => $user->id,
+        'available_balance' => $balance,
+        'held_balance'      => 0,
+        'total_earned'      => $balance,
+    ]);
+}
+
+// ── Shared expectations ───────────────────────────────────────────
+
+expect()->extend('toBeRedirectTo', function (string $route) {
+    return $this->value->assertRedirect(route($route));
 });
 
-/*
-|--------------------------------------------------------------------------
-| Functions
-|--------------------------------------------------------------------------
-|
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
-|
-*/
-
-function something()
-{
-    // ..
-}
+expect()->extend('toHaveFlash', function (string $key) {
+    return $this->value->assertSessionHas($key);
+});

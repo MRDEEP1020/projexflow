@@ -89,20 +89,3 @@
     </div>
 
 </div>
-
-<style>
-    /* Additional utility classes for theme transitions */
-    .theme-transition {
-        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-    }
-    .rotate-180 {
-        transform: rotate(180deg);
-    }
-    /* Custom width utilities (6.5 = 26px) */
-    .w-6\.5 {
-        width: 26px;
-    }
-    .h-6\.5 {
-        height: 26px;
-    }
-</style>

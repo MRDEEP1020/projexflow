@@ -12,7 +12,7 @@ use App\Models\Review;
 use App\Models\PortfolioItem;
 use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Profile')]
 class ProfilePage extends Component
 {

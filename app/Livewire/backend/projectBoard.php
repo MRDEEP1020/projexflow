@@ -11,7 +11,7 @@ use App\Models\Task;
 use App\Models\ProjectActivity;
 use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 class projectBoard extends Component
 {
     public Project $project;

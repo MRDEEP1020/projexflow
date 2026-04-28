@@ -148,7 +148,7 @@
                     :class="recording ? 'bg-red-500 text-white animate-pulse' : 'bg-[#1c2e45] text-[#dde6f0] hover:bg-[#254060]'"
                     title="Toggle recording"
                 >
-                    <flux:icon.record class="size-5"/>
+                    <flux:icon.camera class="size-5"/>
                 </button>
             @endif
 

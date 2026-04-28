@@ -1,64 +1,34 @@
 <?php
 
-use App\Livewire\Backend\CreateOrganization;
-use App\Livewire\Backend\Dashboard;
-use App\Livewire\Backend\Members;
-use App\Livewire\Backend\OrgSettings;
-use App\Livewire\Backend\ProjectArchived;
-use App\Livewire\Backend\ProjectBoard;
-use App\Livewire\Backend\ProjectCreate;
-use App\Livewire\Backend\ProjectList;
-use App\Livewire\Backend\ProjectSettings;
-use App\Livewire\Backend\ProjectPortal;
-use App\Livewire\Backend\PersonalCalendar;
-use App\Livewire\Backend\AvailabilitySettings;
-use App\Livewire\Backend\PublicBookingPage;
-use App\Livewire\Backend\BookingInbox;
-use App\Livewire\Backend\MyTask;
-use App\Livewire\Backend\MarketplaceBrowse;
-use App\Livewire\Backend\ProfilePage;
-use App\Livewire\Backend\EditProfile;
-use App\Livewire\Backend\ContractManager;
-use App\Livewire\Backend\WalletPage;
-use App\Livewire\Backend\ProjectMeetingRoom;
-use App\Livewire\Backend\SubmitReview;
-use App\Livewire\Backend\NotificationsCenter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Livewire\Volt\Volt;
 
 // ── Auth routes ────────────────────────────────────────────────
 require __DIR__ . '/auth.php';
 
-// ── Welcome ────────────────────────────────────────────────────
-Route::get('welcome', fn() => view('welcome'))->name('welcome');
+// ── Public ─────────────────────────────────────────────────────
+Route::get('/', fn () => view('welcome'));
+
+// ── Public: client portal ──────────────────────────────────────
+Route::get('/portal/{token}', \App\Livewire\Backend\ProjectPortal::class)
+    ->name('backend.projectPortal');
+
+// ── Public: freelancer booking page ───────────────────────────
+Route::get('/book/{username}', \App\Livewire\Backend\PublicBookingPage::class)
+    ->name('backend.bookingPage');
 
 // ── Public: invitation accept ──────────────────────────────────
 Route::get('/invitations/accept/{token}', function (string $token) {
     $invitation = \App\Models\Invitation::where('token', $token)->firstOrFail();
-
-    if ($invitation->isExpired()) {
-        return view('invitations.expired', compact('invitation'));
-    }
-
-    if ($invitation->isAccepted()) {
-        return redirect()->route('dashboard')
-            ->with('status', 'This invitation has already been accepted.');
-    }
-
+    if ($invitation->isExpired())   return view('invitations.expired', compact('invitation'));
+    if ($invitation->isAccepted())  return redirect()->route('client.dashboard')->with('status','Already accepted.');
     session(['invitation_token' => $token]);
-
-    // ✅ FIXED: was Auth::heck() — typo caused fatal error on invitation flow
     if (! Auth::check()) {
-        return redirect()->route('register')
-            ->with('invitation_email', $invitation->email);
+        return redirect()->route('register')->with('invitation_email', $invitation->email);
     }
-
-    if (Auth::user()->email !== $invitation->email) {
-        return view('invitations.wrong-account', compact('invitation'));
-    }
-
-    DB::transaction(function () use ($invitation) {
+    if (Auth::user()->email !== $invitation->email) return view('invitations.wrong-account', compact('invitation'));
+    \Illuminate\Support\Facades\DB::transaction(function () use ($invitation) {
         \App\Models\OrganizationMember::create([
             'org_id'    => $invitation->org_id,
             'user_id'   => Auth::id(),
@@ -67,88 +37,124 @@ Route::get('/invitations/accept/{token}', function (string $token) {
         ]);
         $invitation->update(['accepted_at' => now()]);
     });
-
     session(['active_org_id' => $invitation->org_id]);
     session()->forget('invitation_token');
-
-    return redirect()->route('dashboard')
-        ->with('status', 'You have joined ' . $invitation->organization->name . '!');
+    return redirect()->route('client.dashboard')->with('status','Joined '.$invitation->organization->name.'!');
 })->name('invitations.accept');
 
-// ── Public: Client Portal ──────────────────────────────────────
-// MUST be outside auth middleware — token IS the authentication
-Route::get('/portal/{token}', ProjectPortal::class)->name('backend.projectPortal');
+// ═══════════════════════════════════════════════════════════════
+// AUTHENTICATED ROUTES
+// ═══════════════════════════════════════════════════════════════
+Route::middleware([
+    'auth',
+    'verified',
+    \App\Http\Middleware\SetActiveOrg::class,
+    \App\Http\Middleware\DetectUserMode::class,
+])->group(function () {
 
-Route::get('/backend/meetings/{token}', ProjectMeetingRoom::class)->name('backend.meetingRoom');
+    // ── Root redirect based on active mode ────────────────────
+    Route::get('/backend/dashboard', function () {
+        $mode = session('active_mode', Auth::user()->active_mode ?? 'client');
+        return redirect()->route($mode === 'freelancer' ? 'freelancer.dashboard' : 'client.dashboard');
+    })->name('dashboard');
 
-// ── Authenticated routes ───────────────────────────────────────
-Route::middleware(['auth', 'verified', \App\Http\Middleware\SetActiveOrg::class])
+    Route::get('/', fn () => redirect()->route('dashboard'));
+
+    // ── Org switch ─────────────────────────────────────────────
+    Route::post('/switch-org/{org}', function (\App\Models\Organization $org) {
+        abort_unless(Auth::user()->isMemberOfOrg($org->id), 403);
+        session(['active_org_id' => $org->id]);
+        return redirect()->route('dashboard');
+    })->name('orgs.switch');
+
+    // ══════════════════════════════════════════════════════════
+    // CLIENT ROUTES — blue layout, client nav
+    // ══════════════════════════════════════════════════════════
+    Route::get('/client/dashboard', \App\Livewire\Backend\ClientDashboard::class)
+        ->name('client.dashboard');
+
+    // Client marketplace (different UX from freelancer profile editor)
+    Route::get('/client/marketplace', \App\Livewire\Backend\ProjectClientMarketplace::class)
+        ->name('client.marketplace');
+
+    // ══════════════════════════════════════════════════════════
+    // FREELANCER ROUTES — green layout, freelancer nav
+    // ══════════════════════════════════════════════════════════
+    Route::get('/freelancer/dashboard', \App\Livewire\Backend\FreelancerDashboard::class)
+        ->name('freelancer.dashboard');
+
+    // ══════════════════════════════════════════════════════════
+    // SHARED ROUTES — work in both modes (use app.blade.php or
+    // detect mode inside the component for layout)
+    // ══════════════════════════════════════════════════════════
+
+    // Organizations (shared — both modes can manage orgs)
+    Route::get('/backend/organizations/create',              \App\Livewire\Backend\CreateOrganization::class)->name('backend.create');
+    Route::get('/backend/organizations/{org}/settings',      \App\Livewire\Backend\OrgSettings::class)->name('backend.settings');
+    Route::get('/backend/organizations/{org}/members',       \App\Livewire\Backend\Members::class)->name('backend.members');
+
+    // Projects (shared)
+    Route::get('/backend/projects',                          \App\Livewire\Backend\ProjectList::class)->name('backend.projectList');
+    Route::get('/backend/projects/create',                   \App\Livewire\Backend\ProjectCreate::class)->name('backend.projectCreate');
+    Route::get('/backend/projects/archived',                 \App\Livewire\Backend\ProjectArchived::class)->name('backend.projectArchived');
+    Route::get('/backend/projects/{project}',                \App\Livewire\Backend\ProjectBoard::class)->name('backend.projectBoard');
+    Route::get('/backend/projects/{project}/settings',       \App\Livewire\Backend\ProjectSettings::class)->name('backend.projectSettings');
+
+    // Tasks (shared)
+    Route::get('/my-tasks',                                  \App\Livewire\Backend\MyTask::class)->name('my-tasks');
+
+    // Calendar (shared)
+    Route::get('/backend/calendar',                          \App\Livewire\Backend\PersonalCalendar::class)->name('backend.calendar');
+
+    // Marketplace (freelancer profile side — shared but freelancer-centric)
+    Route::get('/backend/marketplace',                       \App\Livewire\Backend\MarketplaceBrowse::class)->name('backend.marketplace');
+    Route::get('/backend/marketplace/{username}',            \App\Livewire\Backend\ProfilePage::class)->name('backend.profilePage');
+    Route::get('/backend/profile/edit',                      \App\Livewire\Backend\EditProfile::class)->name('backend.editProfile');
+    Route::get('/settings/availability',                     \App\Livewire\Backend\AvailabilitySettings::class)->name('backend.availabilitySettings');
+
+    // Job board (shared — clients post, freelancers apply)
+    Route::get('/backend/jobs',                              \App\Livewire\Backend\JobBoard::class)->name('backend.jobBoard');
+    Route::get('/backend/jobs/create',                       \App\Livewire\Backend\JobPostCreate::class)->name('backend.jobPostCreate');
+   Route::get('/backend/jobs/mine', \App\Livewire\Backend\MyJobs::class)->name('backend.myJobs');
+Route::get('/backend/applications/mine', \App\Livewire\Backend\MyJobs::class)->name('backend.myApplications');
+    Route::get('/backend/jobs/{id}',                         \App\Livewire\Backend\JobPostDetail::class)->name('backend.jobPostDetail');
+
+    // Bookings (shared)
+    Route::get('/backend/bookings',                          \App\Livewire\Backend\BookingInbox::class)->name('backend.bookingInbox');
+
+    // Payments (shared)
+    Route::get('/backend/contracts',                         \App\Livewire\Backend\ContractManager::class)->name('backend.contracts');
+    Route::get('/backend/wallet',                            \App\Livewire\Backend\WalletPage::class)->name('backend.wallet');
+    Route::get('/backend/review',                            \App\Livewire\Backend\SubmitReview::class)->name('backend.submitReview');
+
+    // Video
+    Route::get('/backend/meetings/{token}',                  \App\Livewire\Backend\ProjectMeetingRoom::class)->name('backend.meetingRoom');
+
+    // Notifications + Settings
+    Route::get('/backend/notifications',                     \App\Livewire\Backend\NotificationsCenter::class)->name('backend.notifications');
+    Route::get('/settings/profile',                          fn() => 'Coming soon')->name('settings.profile');
+    Volt::route('settings/password', 'settings.password')
+        ->name('settings.password');
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ADMIN ROUTES — completely separate middleware stack
+// ════════════════════════════════════
+Route::middleware(['auth', 'verified', \App\Http\Middleware\RequireAdmin::class])
+    ->prefix('admin')
+    ->name('admin.')
     ->group(function () {
-
-        // ── Root redirect ──────────────────────────────────────
-        Route::get('/', fn() => redirect()->route('dashboard'));
-        Route::get('/backend/dashboard', Dashboard::class)->name('dashboard');
-
-        // ── Org switcher ───────────────────────────────────────
-        Route::post('/switch-org/{org}', function (\App\Models\Organization $org) {
-            abort_unless(Auth::user()->isMemberOfOrg($org->id), 403);
-            session(['active_org_id' => $org->id]);
-            return redirect()->route('dashboard');
-        })->name('orgs.switch');
-
-        // ── Organizations ──────────────────────────────────────
-        // ✅ FIXED: was '/backend/create' — conflicted with projectCreate below
-        Route::get('/backend/organizations/create', CreateOrganization::class)
-            ->name('backend.create');
-
-        Route::get('/backend/organizations/{org}/settings', OrgSettings::class)
-            ->name('backend.settings');
-
-        Route::get('/backend/organizations/{org}/members', Members::class)
-            ->name('backend.members');
-
-        // ── Projects ───────────────────────────────────────────
-        // ✅ FIXED: specific routes MUST come before wildcard {project} routes
-        //    Laravel matches routes top-to-bottom; /backend/archived would have
-        //    been swallowed by /backend/{project} without this ordering.
-
-        Route::get('/backend/projects', ProjectList::class)
-            ->name('backend.projectList');
-
-        Route::get('/backend/projects/create', ProjectCreate::class)
-            ->name('backend.projectCreate');
-
-        Route::get('/backend/projects/archived', ProjectArchived::class)
-            ->name('backend.projectArchived');
-
-        // ✅ Wildcard project routes AFTER all static /projects/* routes
-        Route::get('/backend/projects/{project}', ProjectBoard::class)
-            ->name('backend.projectBoard');
-
-        Route::get('/backend/projects/{project}/settings', ProjectSettings::class)
-            ->name('backend.projectSettings');
-
-        // ── Tasks ──────────────────────────────────────────────
-        Route::get('/my-tasks', MyTask::class)->name('my-tasks');
-
-        // Phase 7 — Marketplace
-        Route::get('/backend/marketplace',              MarketplaceBrowse::class)->name('backend.marketplace');
-        Route::get('/backend/marketplace/{username}',   ProfilePage::class)->name('backend.profilePage');
-        Route::get('/backend/profile/edit',             EditProfile::class)->name('backend.editProfile');
-
-        // Phase 8 — Payments & Video
-        Route::get('/backend/contracts',                ContractManager::class)->name('backend.contracts');
-        Route::get('/backend/wallet',                   WalletPage::class)->name('backend.wallet');
-        Route::get('/backend/review',                   SubmitReview::class)->name('backend.submitReview');
-
-
-        Route::get('/backend/calendar',               PersonalCalendar::class)->name('backend.calendar');
-        Route::get('/settings/availability',          AvailabilitySettings::class)->name('backend.availabilitySettings');
-        Route::get('/backend/bookings',               BookingInbox::class)->name('backend.bookingInbox');
-        Route::get('/book/{username}',                PublicBookingPage::class)->name('backend.bookingPage');
-
-Route::get('/backend/notifications', NotificationsCenter::class)->name('backend.notifications');
-
-        // ── Placeholders (future phases) ───────────────────────
-        Route::get('/settings/profile',     fn() => 'Coming soon')->name('settings.profile');
+        Route::get('/dashboard',    \App\Livewire\Backend\AdminDashboard::class)->name('dashboard');
+        Route::get('/users',        \App\Livewire\Backend\AdminUsers::class)->name('users');
+        Route::get('/disputes',     \App\Livewire\Backend\AdminDisputes::class)->name('disputes');
+        Route::get('/withdrawals',  \App\Livewire\Backend\AdminWithdrawals::class)->name('withdrawals');
+        Route::get('/moderation',   \App\Livewire\Backend\AdminModeration::class)->name('moderation');
     });
+
+// ═══════════════════════════════════════════════════════════════
+// WEBHOOK ROUTES (no auth, signature-verified inside controller)
+// ═══════════════════════════════════════════════════════════════
+// These go in routes/api.php:
+//
+// Route::post('/webhook/github',  [\App\Http\Controllers\GitHubWebhookController::class, 'handle'])->name('webhook.github');
+// Route::post('/webhook/livekit', [\App\Http\Controllers\LiveKitWebhookController::class, 'handle'])->name('webhook.livekit');

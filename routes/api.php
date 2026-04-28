@@ -1,12 +1,8 @@
 <?php
-use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GitHubWebhookController;
+use App\Http\Controllers\LiveKitWebhookController;
 
-
-Route::post('/webhook/github', App\Http\Controllers\GitHubWebhookController::class . '@handle')
-    ->name('webhook.github')
-    ->withoutMiddleware(['auth:sanctum']);
-
-Route::post('/webhook/livekit', App\Http\Controllers\LiveKitWebhookController::class . '@handle')
-    ->name('webhook.livekit')
-    ->withoutMiddleware(['auth:sanctum']);
+Route::post('/webhook/github',  [GitHubWebhookController::class,  'handle'])->name('webhook.github');
+Route::post('/webhook/livekit', [LiveKitWebhookController::class, 'handle'])->name('webhook.livekit');

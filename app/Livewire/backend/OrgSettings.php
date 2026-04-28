@@ -14,7 +14,7 @@ use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Organization Settings')]
 class OrgSettings extends Component
 {

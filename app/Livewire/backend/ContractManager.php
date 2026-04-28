@@ -15,7 +15,7 @@ use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Contracts')]
 class ContractManager extends Component
 {

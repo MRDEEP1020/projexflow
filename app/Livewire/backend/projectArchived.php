@@ -10,7 +10,7 @@ use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Archive')]
 class projectArchived extends Component
 {

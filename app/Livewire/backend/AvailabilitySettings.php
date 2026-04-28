@@ -11,7 +11,7 @@ use App\Models\AvailabilityOverride;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
-#[Layout('layouts.app')]
+#[Layout('components.layouts.app')]
 #[Title('Availability Settings')]
 class AvailabilitySettings extends Component
 {
