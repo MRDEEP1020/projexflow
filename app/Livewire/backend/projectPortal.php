@@ -14,7 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Request;
 
 #[Layout('components.layouts.app')]
-class projectPortal extends Component
+class ProjectPortal extends Component
 {
     // Token and project ID are protected from external manipulation
     public string $token     = '';

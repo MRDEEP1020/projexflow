@@ -12,7 +12,7 @@ use App\Models\ProjectActivity;
 use Illuminate\Support\Facades\Auth;
 
 #[Layout('components.layouts.app')]
-class projectBoard extends Component
+class ProjectBoard extends Component
 {
     public Project $project;
     public string $view = 'kanban';   // kanban | list

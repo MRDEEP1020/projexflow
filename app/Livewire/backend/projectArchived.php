@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Session;
 
 #[Layout('components.layouts.app')]
 #[Title('Archive')]
-class projectArchived extends Component
+class ProjectArchived extends Component
 {
     use WithPagination;
 

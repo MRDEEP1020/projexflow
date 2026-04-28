@@ -13,7 +13,7 @@ use App\Models\ProjectActivity;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
-class taskDetail extends Component
+class TaskDetail extends Component
 {
     use WithFileUploads;
 

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
 #[Layout('components.layouts.app')]
-class projectSettings extends Component
+class ProjectSettings extends Component
 {
     public Project $project;
     public string $tab = 'general';

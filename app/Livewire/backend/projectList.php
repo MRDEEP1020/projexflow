@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Session;
 
 #[Layout('components.layouts.app')]
 #[Title('Projects')]
-class projectList extends Component
+class ProjectList extends Component
 {
     use WithPagination;
 
