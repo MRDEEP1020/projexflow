@@ -27,12 +27,20 @@ WORKDIR /var/www/html
 
 COPY . .
 
+# Create a dummy .env so artisan commands work during build
+RUN cp .env.example .env
+
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 RUN npm ci && npm run build
 
+# Generate app key
+RUN php artisan key:generate
+
 RUN chown -R www-data:www-data storage bootstrap/cache
 RUN chmod -R 775 storage bootstrap/cache
+
+COPY docker/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 8080
 
