@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 
 #[Layout('components.layouts.app')]
 #[Title('New Project')]
-class projectCreate extends Component
+class ProjectCreate extends Component
 {
     public string $name = '';
     public string $description = '';
